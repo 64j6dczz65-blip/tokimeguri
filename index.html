@@ -913,38 +913,70 @@ document.getElementById('wCloud').addEventListener('click',()=>setWeather(true))
 function setWeather(cl){weatherCloudy=cl;document.getElementById('wSun').classList.toggle('on',!cl);document.getElementById('wCloud').classList.toggle('on',cl);refreshAll();}
 
 /* 右端エッジからの上下スワイプで片手ズーム（ドラッグ中は地図パンを無効化して競合回避） */
-const edge=document.getElementById('edgeZone');
-const mapEl=document.getElementById('map');
-let eDragging=false,eStartY=0,eStartZoom=0,ePreviewScale=1;
-const EGAIN=1.0; // 感度向上
-edge.addEventListener('pointerdown',e=>{
-  eDragging=true;eStartY=e.clientY;eStartZoom=map.getZoom();ePreviewScale=1;
-  map.dragging.disable();
-  try{edge.setPointerCapture(e.pointerId);}catch(_){}
-  edge.classList.add('active');
-  mapEl.style.transition='none';
-  e.preventDefault();
-});
-edge.addEventListener('pointermove',e=>{
-  if(!eDragging)return;
-  const dy=eStartY-e.clientY;
-  const dz=Math.max(map.getMinZoom()-eStartZoom,Math.min(map.getMaxZoom()-eStartZoom,(dy/window.innerHeight)*EGAIN));
-  ePreviewScale=Math.pow(2,dz);
-  mapEl.style.transform='scale('+ePreviewScale+')';
-  e.preventDefault();
-});
-function eEnd(){
-  if(!eDragging)return; eDragging=false;
-  const targetZoom=Math.max(map.getMinZoom(),Math.min(map.getMaxZoom(),eStartZoom+Math.log2(ePreviewScale)));
-  mapEl.style.transition='transform .1s ease-out';
-  mapEl.style.transform='scale(1)';
-  map.dragging.enable();
-  edge.classList.remove('active');
-  // タイムアウトを短縮し、animate:false にしてアイコンの点滅を防止
-  setTimeout(()=>{ mapEl.style.transition=''; map.setZoom(targetZoom,{animate:false}); }, 30);
-}
-edge.addEventListener('pointerup',eEnd);
-edge.addEventListener('pointercancel',eEnd);
+const edge = document.getElementById('edgeZone');
+  const mapEl = document.getElementById('map');
+  
+  /* === ズーム感度改善ロジック (Touchイベント版) === */
+  const EGAIN = 3.0; // スマホでのスワイプ量に合わせるため、感度をさらに高めに設定
+  const ZOOM_DELAY = 10; // 反応を極限まで速める
+  let eDragging=false, eStartY=0, eStartZoom=0, ePreviewScale=1;
+
+  // タッチ開始
+  edge.addEventListener('touchstart', e => {
+    if (e.touches.length > 1) return; // 複数の指で触った場合は無視
+
+    eDragging = true;
+    eStartY = e.touches[0].clientY; // touchイベント用のY座標取得
+    eStartZoom = map.getZoom();
+    ePreviewScale = 1;
+    
+    map.dragging.disable();
+    edge.classList.add('active');
+    mapEl.style.transition = 'none';
+    
+    e.preventDefault(); // スクロールを完全に防ぐ
+  }, { passive: false });
+
+  // タッチ移動
+  edge.addEventListener('touchmove', e => {
+    if (!eDragging) return;
+    
+    e.preventDefault(); // スクロールを完全に防ぐ
+
+    const currentY = e.touches[0].clientY;
+    const dy = eStartY - currentY;
+    
+    // 画面高さに対する移動割合を計算し、EGAINと調整係数を掛ける
+    const ratio = dy / window.innerHeight;
+    const rawDz = ratio * EGAIN * 5; // 5はスマホ用感度調整係数
+    
+    // ズームの限界値を設定
+    const dz = Math.max(map.getMinZoom() - eStartZoom, Math.min(map.getMaxZoom() - eStartZoom, rawDz));
+    
+    ePreviewScale = Math.pow(2, dz);
+    mapEl.style.transform = 'scale(' + ePreviewScale + ')';
+  }, { passive: false });
+
+  // タッチ終了
+  function tEnd(e){
+    if (!eDragging) return; 
+    eDragging = false;
+    
+    const targetZoom = Math.max(map.getMinZoom(), Math.min(map.getMaxZoom(), eStartZoom + Math.log2(ePreviewScale)));
+    
+    mapEl.style.transition = 'transform .05s ease-out'; // 少しだけアニメーションを残す
+    mapEl.style.transform = 'scale(1)';
+    map.dragging.enable();
+    edge.classList.remove('active');
+    
+    setTimeout(() => { 
+      mapEl.style.transition = ''; 
+      map.setZoom(targetZoom, { animate: false }); 
+    }, ZOOM_DELAY);
+  }
+
+  edge.addEventListener('touchend', tEnd);
+  edge.addEventListener('touchcancel', tEnd);
 const hint=document.getElementById('hint');
 setTimeout(()=>hint.classList.add('gone'),5200);
 let last=performance.now();
