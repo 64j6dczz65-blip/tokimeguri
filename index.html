@@ -507,11 +507,11 @@ const SHOP_GENRE={cafe:{e:'☕',l:'カフェ'},food:{e:'🍽',l:'食事'},sweets
 function SH(name,genre,lat,lng,pop,peak,o,c,coupon,fee){return {name,genre,latlng:[lat,lng],pop,peak,hours:[o,c],coupon,fee};}
 const SHOPS_ALL={
   kawagoe:{
-    osatsu:  SH('小江戸おさつ庵','sweets',35.92695,139.48200,0.75,13,10,17,'おさつチップス 10%OFF',150),
-    rakuraku:SH('川越ベーカリー楽楽','bakery',35.92455,139.48335,0.6,12,7,18,'焼きたてパン＋ドリンク無料',180),
-    imocafe: SH('小江戸おいもカフェ','cafe',35.92615,139.48445,0.55,15,10,18.5,'紫芋ラテ ¥100引き',160),
-    nakaichi:SH('中市本店','food',35.92712,139.48262,0.65,12.5,10.5,17.5,'ねこまんま 手ぬぐい進呈',200),
-    monzo:   SH('紋蔵庵 蔵の街店','sweets',35.92522,139.48352,0.5,14,9.5,18,'亀どら 1個サービス',140),
+    osatsu:  SH('小江戸おさつ庵','sweets',35.92576,139.48366,0.75,13,10,17,'おさつチップス 10%OFF',150),
+    rakuraku:SH('川越ベーカリー楽楽','bakery',35.92683,139.48197,0.6,12,7,18,'焼きたてパン＋ドリンク無料',180),
+    imocafe: SH('小江戸おいもカフェ','cafe',35.92380,139.48370,0.55,15,10,18.5,'紫芋ラテ ¥100引き',160),
+    nakaichi:SH('中市本店','food',35.92461,139.48363,0.65,12.5,10.5,17.5,'ねこまんま 手ぬぐい進呈',200),
+    monzo:   SH('紋蔵庵 蔵の街店','sweets',35.92555,139.48350,0.5,14,9.5,18,'亀どら 1個サービス',140),
   },
 };
 let SHOPS=SHOPS_ALL[region]; let SHOP_KEYS=Object.keys(SHOPS);
@@ -587,7 +587,7 @@ function nextSuggestion(fromKey){
 
 /* 地図：文字なしの淡色ジオメトリ地図(Esri Light Gray Base=ラベル無し)を主役に→OSM→Wikimedia */
 const KAWAGOE_BOUNDS=[[35.9035,139.4700],[35.9430,139.5010]];
-const map=L.map('map',{zoomControl:false,attributionControl:true,minZoom:14,maxZoom:18,zoomSnap:0,inertia:true,fadeAnimation:false,markerZoomAnimation:false,maxBounds:KAWAGOE_BOUNDS,maxBoundsViscosity:1.0}).setView(REGIONS[region].center,REGIONS[region].zoom);
+const map=L.map('map',{zoomControl:false,attributionControl:true,minZoom:14,maxZoom:18,zoomSnap:0,inertia:true,fadeAnimation:false,markerZoomAnimation:true,maxBounds:KAWAGOE_BOUNDS,maxBoundsViscosity:1.0}).setView(REGIONS[region].center,REGIONS[region].zoom);
 L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{maxZoom:19,updateWhenIdle:true,updateWhenZooming:false,keepBuffer:1,attribution:'&copy; Google'}).addTo(map);
 map.on('click',()=>{ if(selectedSpot) closeCard(); if(selectedShop) closeShopCard(); });
 
@@ -914,11 +914,35 @@ function setWeather(cl){weatherCloudy=cl;document.getElementById('wSun').classLi
 
 /* 右端エッジからの上下スワイプで片手ズーム（ドラッグ中は地図パンを無効化して競合回避） */
 const edge=document.getElementById('edgeZone');
-let eDragging=false,eStartY=0,eStartZoom=0;
-const EGAIN=7; // 画面高さ1つ分のスワイプで動くズーム量
-edge.addEventListener('pointerdown',e=>{eDragging=true;eStartY=e.clientY;eStartZoom=map.getZoom();map.dragging.disable();try{edge.setPointerCapture(e.pointerId);}catch(_){}edge.classList.add('active');e.preventDefault();});
-edge.addEventListener('pointermove',e=>{ if(!eDragging)return; const dy=eStartY-e.clientY; const nz=eStartZoom+(dy/window.innerHeight)*EGAIN; map.setZoom(Math.max(map.getMinZoom(),Math.min(map.getMaxZoom(),nz)),{animate:false}); e.preventDefault(); });
-function eEnd(){ if(!eDragging)return; eDragging=false; map.dragging.enable(); edge.classList.remove('active'); }
+const mapEl=document.getElementById('map');
+let eDragging=false,eStartY=0,eStartZoom=0,ePreviewScale=1;
+const EGAIN=1.0; // 感度向上
+edge.addEventListener('pointerdown',e=>{
+  eDragging=true;eStartY=e.clientY;eStartZoom=map.getZoom();ePreviewScale=1;
+  map.dragging.disable();
+  try{edge.setPointerCapture(e.pointerId);}catch(_){}
+  edge.classList.add('active');
+  mapEl.style.transition='none';
+  e.preventDefault();
+});
+edge.addEventListener('pointermove',e=>{
+  if(!eDragging)return;
+  const dy=eStartY-e.clientY;
+  const dz=Math.max(map.getMinZoom()-eStartZoom,Math.min(map.getMaxZoom()-eStartZoom,(dy/window.innerHeight)*EGAIN));
+  ePreviewScale=Math.pow(2,dz);
+  mapEl.style.transform='scale('+ePreviewScale+')';
+  e.preventDefault();
+});
+function eEnd(){
+  if(!eDragging)return; eDragging=false;
+  const targetZoom=Math.max(map.getMinZoom(),Math.min(map.getMaxZoom(),eStartZoom+Math.log2(ePreviewScale)));
+  mapEl.style.transition='transform .1s ease-out';
+  mapEl.style.transform='scale(1)';
+  map.dragging.enable();
+  edge.classList.remove('active');
+  // タイムアウトを短縮し、animate:false にしてアイコンの点滅を防止
+  setTimeout(()=>{ mapEl.style.transition=''; map.setZoom(targetZoom,{animate:false}); }, 30);
+}
 edge.addEventListener('pointerup',eEnd);
 edge.addEventListener('pointercancel',eEnd);
 const hint=document.getElementById('hint');
