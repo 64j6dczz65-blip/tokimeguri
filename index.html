@@ -588,7 +588,7 @@ function nextSuggestion(fromKey){
 /* 地図：文字なしの淡色ジオメトリ地図(Esri Light Gray Base=ラベル無し)を主役に→OSM→Wikimedia */
 const KAWAGOE_BOUNDS=[[35.9035,139.4700],[35.9430,139.5010]];
 const map=L.map('map',{zoomControl:false,attributionControl:true,minZoom:14,maxZoom:18,zoomSnap:0,inertia:true,fadeAnimation:false,markerZoomAnimation:false,maxBounds:KAWAGOE_BOUNDS,maxBoundsViscosity:1.0}).setView(REGIONS[region].center,REGIONS[region].zoom);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{subdomains:'abc',maxZoom:19,updateWhenIdle:true,updateWhenZooming:false,keepBuffer:1,attribution:'&copy; OpenStreetMap'}).addTo(map);
+L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{maxZoom:19,updateWhenIdle:true,updateWhenZooming:false,keepBuffer:1,attribution:'&copy; Google'}).addTo(map);
 map.on('click',()=>{ if(selectedSpot) closeCard(); if(selectedShop) closeShopCard(); });
 
 /* 名所写真（base64埋め込み・確実表示） */
