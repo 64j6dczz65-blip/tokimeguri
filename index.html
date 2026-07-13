@@ -105,6 +105,10 @@
   @keyframes sigpulse{0%,100%{box-shadow:0 0 0 2px var(--kin),0 0 8px rgba(217,138,31,.4)}50%{box-shadow:0 0 0 2px var(--kin),0 0 20px rgba(217,138,31,.78)}}
 
   /* ボトム時間 */
+  /* 右端エッジ・ズームトリガーゾーン */
+  .edgezone{position:fixed;top:118px;bottom:196px;right:0;width:48px;z-index:16;touch-action:none;display:flex;align-items:center;justify-content:flex-end}
+  .edgezone .ez-grip{width:5px;height:72px;border-radius:99px;background:rgba(24,20,14,.16);margin-right:5px;transition:.18s;pointer-events:none}
+  .edgezone.active .ez-grip{background:var(--kin);height:128px;width:6px}
   .dock{position:fixed;left:0;right:0;bottom:0;z-index:22;padding:8px 18px calc(14px + env(safe-area-inset-bottom));background:linear-gradient(0deg,rgba(255,255,255,.97),rgba(255,255,255,.7) 55%,transparent)}
   .dock .handle{width:52px;height:6px;border-radius:99px;background:rgba(24,20,14,.28);margin:3px auto 12px;touch-action:none;cursor:ns-resize;position:relative}
   .dock .handle::before{content:"＋";position:absolute;left:50%;top:-15px;transform:translateX(-50%);font-size:11px;font-weight:800;color:rgba(24,20,14,.35)}
@@ -322,7 +326,7 @@
   <div class="note">丸写真＝名所／絵文字＝店。タップで詳細。</div>
 </div>
 
-<div class="hint" id="hint">アイコンをタップで詳細 ・ 下のハンドルを上下で拡大縮小（片手OK）</div>
+<div class="hint" id="hint">アイコンをタップで詳細 ・ 画面右端を上下スワイプで片手ズーム</div>
 
 <div class="sheet" id="sheet">
   <div class="card">
@@ -421,9 +425,10 @@
   <div class="rlist" id="rankList"></div>
 </div>
 
+<div class="edgezone" id="edgeZone"><div class="ez-grip"></div></div>
+
 <div class="dock" id="dock">
   <div class="inner">
-    <div class="handle" id="dockHandle"></div>
     <button class="recopill" id="recoPill">
       <span class="rp-eye" id="recoEyebrow">いま撮るなら</span>
       <span class="rp-name" id="recoName">—</span>
@@ -907,23 +912,15 @@ document.getElementById('wSun').addEventListener('click',()=>setWeather(false));
 document.getElementById('wCloud').addEventListener('click',()=>setWeather(true));
 function setWeather(cl){weatherCloudy=cl;document.getElementById('wSun').classList.toggle('on',!cl);document.getElementById('wCloud').classList.toggle('on',cl);refreshAll();}
 
-/* もちもち片手ズーム（ハンドルを上=拡大／下=縮小、離すとバネで戻る） */
-const dockHandle=document.getElementById('dockHandle');
-let zDragging=false,zStartY=0,zStartZoom=0;
-const ZSENS=52; // 1ズームレベルあたりのドラッグpx
-dockHandle.addEventListener('pointerdown',e=>{zDragging=true;zStartY=e.clientY;zStartZoom=map.getZoom();dockHandle.style.transition='none';e.preventDefault();});
-window.addEventListener('pointermove',e=>{
-  if(!zDragging)return;
-  const dy=zStartY-e.clientY;                 // 上ドラッグ＝正
-  const ky=Math.max(-16,Math.min(16,dy*0.4)); // ハンドルの伸び（もちもち）
-  dockHandle.style.transform='translateY('+(-ky)+'px) scaleX('+(1+Math.abs(ky)/90)+')';
-  const nz=Math.max(map.getMinZoom(),Math.min(map.getMaxZoom(),zStartZoom+dy/ZSENS));
-  map.setZoom(nz,{animate:false});
-  e.preventDefault();
-},{passive:false});
-function zEnd(){ if(!zDragging)return; zDragging=false; dockHandle.style.transition='transform .4s cubic-bezier(.34,1.56,.64,1)'; dockHandle.style.transform='translateY(0) scaleX(1)'; }
-window.addEventListener('pointerup',zEnd);
-window.addEventListener('pointercancel',zEnd);
+/* 右端エッジからの上下スワイプで片手ズーム（ドラッグ中は地図パンを無効化して競合回避） */
+const edge=document.getElementById('edgeZone');
+let eDragging=false,eStartY=0,eStartZoom=0;
+const EGAIN=7; // 画面高さ1つ分のスワイプで動くズーム量
+edge.addEventListener('pointerdown',e=>{eDragging=true;eStartY=e.clientY;eStartZoom=map.getZoom();map.dragging.disable();try{edge.setPointerCapture(e.pointerId);}catch(_){}edge.classList.add('active');e.preventDefault();});
+edge.addEventListener('pointermove',e=>{ if(!eDragging)return; const dy=eStartY-e.clientY; const nz=eStartZoom+(dy/window.innerHeight)*EGAIN; map.setZoom(Math.max(map.getMinZoom(),Math.min(map.getMaxZoom(),nz)),{animate:false}); e.preventDefault(); });
+function eEnd(){ if(!eDragging)return; eDragging=false; map.dragging.enable(); edge.classList.remove('active'); }
+edge.addEventListener('pointerup',eEnd);
+edge.addEventListener('pointercancel',eEnd);
 const hint=document.getElementById('hint');
 setTimeout(()=>hint.classList.add('gone'),5200);
 let last=performance.now();
