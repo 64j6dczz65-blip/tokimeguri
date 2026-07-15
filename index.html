@@ -1011,7 +1011,7 @@ const GOOGLE_MAPS_API_KEY = "AIzaSyAfSt5c8TZzEBIMKYnyGg58v91np2R3upo";
     if(el){ el.classList.remove('gone');
       el.innerHTML='<div class="lm">地図を読み込めませんでした</div><div class="ls" style="margin-top:14px">APIキーの設定・通信環境をご確認ください</div>'; }
   }
-  if(!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY==="AIzaSyAfSt5c8TZzEBIMKYnyGg58v91np2R3upo"){
+    if(!GOOGLE_MAPS_API_KEY){  
     var el=document.getElementById('loader');
     if(el){ el.classList.remove('gone');
       el.innerHTML='<div class="lm">APIキーが未設定です</div><div class="ls" style="margin-top:14px">HTMLファイル内の GOOGLE_MAPS_API_KEY を書き換えてください</div>'; }
