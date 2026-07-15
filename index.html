@@ -20,7 +20,7 @@
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   html,body{height:100%;overflow:hidden;background:#efeae1;font-family:"Zen Kaku Gothic New",system-ui,sans-serif;color:var(--shikkui)}
- #map{position:absolute !important; width:100%; height:100%; top:0; left:0; background:#efeae1; z-index:1; transform-origin:center center; will-change:transform}
+#map{position:absolute !important; width:100%; height:100%; top:0; left:0; background:#efeae1; z-index:1;}
   .leaflet-div-icon{background:transparent;border:none}
   .leaflet-container{background:#efeae1;font-family:inherit;outline:none}
   .leaflet-control-attribution{background:rgba(255,255,255,.7)!important;color:#555!important;font-size:9px!important;padding:2px 6px!important}
@@ -78,7 +78,7 @@
   .legendpop .note{margin-top:7px;font-size:9px;color:var(--shikkui-dim);letter-spacing:.02em;max-width:158px;line-height:1.4}
 
   /* マーカー共通 */
-  .marker{position:absolute;left:0;top:0;transform:translate(-50%,-50%);cursor:pointer;text-align:center}
+ .marker{position:absolute;left:0;top:0;transform:translate(-50%,-100%);cursor:pointer;text-align:center}
   .marker .plabel{display:none;position:absolute;top:100%;left:50%;transform:translate(-50%,4px);font-family:"Shippori Mincho",serif;font-weight:700;font-size:11.5px;color:#2c2720;background:rgba(255,255,255,.97);border:1px solid var(--panel-line);border-radius:999px;padding:2px 9px;white-space:nowrap;text-shadow:none;max-width:150px;overflow:hidden;text-overflow:ellipsis}
   .marker.sel .plabel,.marker.best .plabel{display:inline-block}
   /* 名所＝四角の写真ピン */
@@ -479,7 +479,7 @@ const HR=(o,c,note)=>({always:false,hours:[o,c],note:note||''});
 
 const REGIONS={
   kawagoe:{label:'川越',center:[35.9245,139.4850],zoom:15,spots:{
-    toki:   S('時の鐘','川越のシンボル・木造の鐘楼','kenchiku','west',35.92490,139.48408,0.95,12.5,28,'夕暮れ 16:30〜17:15',AO('鐘は6/12/15/18時に鳴る')),
+    toki:   S('時の鐘','川越のシンボル・木造の鐘楼','kenchiku','west',35.92384,139.48276,0.95,12.5,28,'夕暮れ 16:30〜17:15',AO('鐘は6/12/15/18時に鳴る')),
     machi:  S('蔵造りの町並み','黒漆喰のメインストリート','kenchiku','west',35.92570,139.48370,0.72,13,10,'夕暮れ 16:30〜17:30',AO('通りは24h・店舗は各店による')),
     kashiya:S('菓子屋横丁','レトロな駄菓子の路地','fukei','east',35.92680,139.48210,0.72,13.5,12,'午前 8:30〜10:00',HR(10,17,'多くの店が10:00–17:00')),
     hikawa: S('川越氷川神社','縁結び・夏は風鈴回廊','kenchiku','east',35.92968,139.48808,0.5,11,9,'早朝 7:00〜9:00',AO('境内24h・授与所 8:00–18:00')),
@@ -969,19 +969,15 @@ edge.addEventListener('touchmove',e=>{
   if(!eDragging)return;
   e.preventDefault();
   const dy=eStartY-e.touches[0].clientY;
-  const rawDz=(dy/window.innerHeight)*EGAIN*5;   // スマホ用調整係数(*5)
-  const dz=Math.max(ZMIN-eStartZoom,Math.min(ZMAX-eStartZoom,rawDz));
-  ePreviewScale=Math.pow(2,dz);
-  mapEl.style.transform='scale('+ePreviewScale+')';
+  const rawDz=(dy/window.innerHeight)*EGAIN*5;
+  const targetZoom=Math.max(ZMIN,Math.min(ZMAX,eStartZoom+rawDz));
+  // CSSのscaleハックを削除し、Google Mapsの滑らかな小数ズームを直接操作する
+  map.setZoom(targetZoom);
 },{passive:false});
 function tEnd(e){
   if(!eDragging)return; eDragging=false;
-  const targetZoom=Math.max(ZMIN,Math.min(ZMAX,eStartZoom+Math.log2(ePreviewScale)));
-  mapEl.style.transition='transform .05s ease-out';
-  mapEl.style.transform='scale(1)';
   map.setOptions({draggable:true});
   edge.classList.remove('active');
-  setTimeout(()=>{ mapEl.style.transition=''; map.setZoom(targetZoom); },ZOOM_DELAY);
 }
 edge.addEventListener('touchend',tEnd);
 edge.addEventListener('touchcancel',tEnd);
