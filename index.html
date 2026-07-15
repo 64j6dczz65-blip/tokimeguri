@@ -9,7 +9,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <style>
   :root{
     --shikkui:#2c2720; --shikkui-dim:#726b5e;
@@ -21,12 +20,12 @@
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   html,body{height:100%;overflow:hidden;background:#efeae1;font-family:"Zen Kaku Gothic New",system-ui,sans-serif;color:var(--shikkui)}
-  #map{position:fixed;inset:0;background:#efeae1;z-index:1}
+  #map{position:fixed;inset:0;background:#efeae1;z-index:1;transform-origin:center center;will-change:transform}
   .leaflet-div-icon{background:transparent;border:none}
   .leaflet-container{background:#efeae1;font-family:inherit;outline:none}
   .leaflet-control-attribution{background:rgba(255,255,255,.7)!important;color:#555!important;font-size:9px!important;padding:2px 6px!important}
   .leaflet-control-attribution a{color:#8a6a1f!important}
-  .leaflet-tile-pane{filter:saturate(.28) brightness(1.16) contrast(.9);opacity:.5}
+  .leaflet-tile-pane{}
   #mapdim{position:fixed;inset:0;z-index:2;pointer-events:none;background:radial-gradient(150% 130% at 50% 42%,transparent 62%,rgba(40,32,20,.05))}
   #skywash{position:fixed;inset:0;z-index:3;pointer-events:none;transition:background .25s,opacity .25s}
 
@@ -36,13 +35,8 @@
   .brand .logo{font-family:"Shippori Mincho",serif;font-weight:800;font-size:19px;letter-spacing:.12em;color:#2c2720;line-height:1;display:flex;align-items:center;gap:7px;text-shadow:0 1px 3px rgba(255,255,255,.7)}
   .brand .logo .mark{width:11px;height:11px;border-radius:50%;background:#e8dcc0;flex:none}
   .rightcol{display:flex;align-items:center;gap:7px;pointer-events:auto}
-  .clock{text-align:right;background:var(--panel);border:1px solid var(--panel-line);border-radius:12px;padding:6px 10px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 8px 22px -14px rgba(0,0,0,.7)}
-  .clock .t{font-family:"Shippori Mincho",serif;font-weight:700;font-size:18px;line-height:1;letter-spacing:.02em;color:var(--shikkui);font-variant-numeric:tabular-nums}
-  .clock .phase{display:flex;align-items:center;justify-content:flex-end;gap:4px;margin-top:3px;font-size:9.5px;letter-spacing:.05em;color:var(--shikkui-dim);font-weight:600}
   .iconbtn{width:38px;height:38px;border-radius:11px;border:1px solid var(--panel-line);background:var(--panel);color:var(--shikkui);font-size:16px;cursor:pointer;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 8px 22px -14px rgba(0,0,0,.7);display:grid;place-items:center}
   .iconbtn:hover{border-color:var(--kin)}
-  .sendpill{border:1px solid var(--panel-line);background:var(--panel);color:var(--shikkui);font-weight:800;font-size:11px;letter-spacing:.02em;padding:8px 10px;border-radius:11px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 8px 22px -14px rgba(0,0,0,.7);display:flex;align-items:center;gap:4px;white-space:nowrap}
-  .sendpill b{color:var(--green);font-family:"Shippori Mincho",serif}
 
   /* 検索行 */
   .searchrow{position:fixed;top:calc(56px + env(safe-area-inset-top));left:12px;right:12px;z-index:19;display:flex;gap:7px;align-items:center}
@@ -84,8 +78,8 @@
   .legendpop .note{margin-top:7px;font-size:9px;color:var(--shikkui-dim);letter-spacing:.02em;max-width:158px;line-height:1.4}
 
   /* マーカー共通 */
-  .marker{position:absolute;left:0;top:0;transform:translate(-50%,-100%);cursor:pointer;text-align:center}
-  .marker .plabel{display:none;margin:4px auto 0;font-family:"Shippori Mincho",serif;font-weight:700;font-size:11.5px;color:#2c2720;background:rgba(255,255,255,.97);border:1px solid var(--panel-line);border-radius:999px;padding:2px 9px;white-space:nowrap;text-shadow:none;max-width:150px;overflow:hidden;text-overflow:ellipsis}
+  .marker{position:absolute;left:0;top:0;transform:translate(-50%,-50%);cursor:pointer;text-align:center}
+  .marker .plabel{display:none;position:absolute;top:100%;left:50%;transform:translate(-50%,4px);font-family:"Shippori Mincho",serif;font-weight:700;font-size:11.5px;color:#2c2720;background:rgba(255,255,255,.97);border:1px solid var(--panel-line);border-radius:999px;padding:2px 9px;white-space:nowrap;text-shadow:none;max-width:150px;overflow:hidden;text-overflow:ellipsis}
   .marker.sel .plabel,.marker.best .plabel{display:inline-block}
   /* 名所＝四角の写真ピン */
   .marker.spot{position:relative}
@@ -105,14 +99,14 @@
   @keyframes sigpulse{0%,100%{box-shadow:0 0 0 2px var(--kin),0 0 8px rgba(217,138,31,.4)}50%{box-shadow:0 0 0 2px var(--kin),0 0 20px rgba(217,138,31,.78)}}
 
   /* ボトム時間 */
+  /* 川越へ戻るボタン */
+  .homebtn{position:fixed;left:14px;bottom:calc(224px + env(safe-area-inset-bottom));z-index:16;width:44px;height:44px;border-radius:50%;border:1px solid var(--panel-line);background:var(--panel);color:#2c2720;font-size:19px;cursor:pointer;box-shadow:0 12px 30px -14px rgba(0,0,0,.5);display:grid;place-items:center}
+  .homebtn:active{background:rgba(24,20,14,.07)}
   /* 右端エッジ・ズームトリガーゾーン */
   .edgezone{position:fixed;top:118px;bottom:196px;right:0;width:48px;z-index:16;touch-action:none;display:flex;align-items:center;justify-content:flex-end}
   .edgezone .ez-grip{width:5px;height:72px;border-radius:99px;background:rgba(24,20,14,.16);margin-right:5px;transition:.18s;pointer-events:none}
   .edgezone.active .ez-grip{background:var(--kin);height:128px;width:6px}
   .dock{position:fixed;left:0;right:0;bottom:0;z-index:22;padding:8px 18px calc(14px + env(safe-area-inset-bottom));background:linear-gradient(0deg,rgba(255,255,255,.97),rgba(255,255,255,.7) 55%,transparent)}
-  .dock .handle{width:52px;height:6px;border-radius:99px;background:rgba(24,20,14,.28);margin:3px auto 12px;touch-action:none;cursor:ns-resize;position:relative}
-  .dock .handle::before{content:"＋";position:absolute;left:50%;top:-15px;transform:translateX(-50%);font-size:11px;font-weight:800;color:rgba(24,20,14,.35)}
-  .dock .handle::after{content:"−";position:absolute;left:50%;bottom:-15px;transform:translateX(-50%);font-size:12px;font-weight:800;color:rgba(24,20,14,.35)}
   .dock .inner{max-width:760px;margin:0 auto}
   .dock .ctrl{display:flex;align-items:center;gap:13px}
   .playbtn{flex:none;width:46px;height:46px;border-radius:50%;border:1px solid var(--panel-line);background:#ffffff;color:#2c2720;cursor:pointer;display:grid;place-items:center;transition:.2s}
@@ -228,9 +222,6 @@
   @keyframes ld{0%{transform:translateX(-120%)}100%{transform:translateX(320%)}}
 
   @media (max-width:560px){
-    .reco{left:12px;max-width:calc(100% - 24px)}
-    .reco .head{font-size:17px}
-    .selrow{left:12px;max-width:calc(100% - 24px)}
     .brand .logo{font-size:20px}
     .clock .t{font-size:22px}
   }
@@ -241,10 +232,6 @@
   .sendpill b{color:var(--green);font-family:"Shippori Mincho",serif}
 
   /* 店マーカー */
-  .marker.shop .bubble{border-style:dashed;border-color:rgba(120,180,160,.55);background:rgba(24,26,24,.95)}
-  .marker.shop .gicon{width:17px;height:17px;border-radius:5px;display:grid;place-items:center;font-size:11px;background:rgba(120,180,160,.18);flex:none}
-  .marker.shop .cpn{font-size:11px}
-  .marker.shop.sig .bubble{border-style:solid;border-color:var(--kin);box-shadow:0 0 0 1px var(--kin),0 0 18px rgba(217,138,31,.55);animation:sigpulse 1.6s ease-in-out infinite}
   @keyframes sigpulse{0%,100%{box-shadow:0 0 0 1px var(--kin),0 0 10px rgba(217,138,31,.4)}50%{box-shadow:0 0 0 1px var(--kin),0 0 22px rgba(217,138,31,.75)}}
   .marker.shop.sel .bubble{border-color:var(--kin);border-style:solid}
 
@@ -425,6 +412,8 @@
   <div class="rlist" id="rankList"></div>
 </div>
 
+<button class="homebtn" id="homeBtn" title="川越へ">🏠</button>
+
 <div class="edgezone" id="edgeZone"><div class="ez-grip"></div></div>
 
 <div class="dock" id="dock">
@@ -455,7 +444,7 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
 <script>
 function boot(){
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
@@ -489,14 +478,19 @@ const AO=(note)=>({always:true,note:note||''});
 const HR=(o,c,note)=>({always:false,hours:[o,c],note:note||''});
 
 const REGIONS={
-  kawagoe:{label:'川越',center:[35.9225,139.4855],zoom:15,spots:{
-    toki:   S('時の鐘','川越のシンボル・木造の鐘楼','kenchiku','west',35.92565,139.48397,0.95,12.5,28,'夕暮れ 16:30〜17:15',AO('鐘は6/12/15/18時に鳴る')),
-    machi:  S('蔵造りの町並み','黒漆喰のメインストリート','kenchiku','west',35.92490,139.48360,0.72,13,10,'夕暮れ 16:30〜17:30',AO('通りは24h・店舗は各店による')),
-    kashiya:S('菓子屋横丁','レトロな駄菓子の路地','fukei','east',35.92678,139.48210,0.72,13.5,12,'午前 8:30〜10:00',HR(10,17,'多くの店が10:00–17:00')),
-    hikawa: S('氷川神社','縁結び・夏は風鈴回廊','kenchiku','east',35.92960,139.48800,0.5,11,9,'早朝 7:00〜9:00',AO('境内24h・授与所 8:00–18:00')),
-    sutaba: S('スタバ 鐘つき通り店','蔵造りのスターバックス','kenchiku','south',35.92520,139.48372,0.6,14,8,'日中 11:00〜14:00',HR(8,20,'目安 8:00–20:00')),
-    nakain: S('中院','しだれ桜と苔庭の名刹','sakura','south',35.91060,139.48540,0.45,11,8,'桜期 早朝〜午前',AO('境内 拝観自由')),
-    kitain: S('喜多院','紅葉と多宝塔・五百羅漢','koyo','south',35.91870,139.49010,0.6,12,10,'紅葉期 午前〜午後',HR(8.83,16.5,'拝観 8:50–16:30頃')),
+  kawagoe:{label:'川越',center:[35.9245,139.4850],zoom:15,spots:{
+    toki:   S('時の鐘','川越のシンボル・木造の鐘楼','kenchiku','west',35.92490,139.48408,0.95,12.5,28,'夕暮れ 16:30〜17:15',AO('鐘は6/12/15/18時に鳴る')),
+    machi:  S('蔵造りの町並み','黒漆喰のメインストリート','kenchiku','west',35.92570,139.48370,0.72,13,10,'夕暮れ 16:30〜17:30',AO('通りは24h・店舗は各店による')),
+    kashiya:S('菓子屋横丁','レトロな駄菓子の路地','fukei','east',35.92680,139.48210,0.72,13.5,12,'午前 8:30〜10:00',HR(10,17,'多くの店が10:00–17:00')),
+    hikawa: S('川越氷川神社','縁結び・夏は風鈴回廊','kenchiku','east',35.92968,139.48808,0.5,11,9,'早朝 7:00〜9:00',AO('境内24h・授与所 8:00–18:00')),
+    sutaba: S('スタバ 鐘つき通り店','蔵造りのスターバックス','kenchiku','south',35.92503,139.48420,0.6,14,8,'日中 11:00〜14:00',HR(8,20,'目安 8:00–20:00')),
+    nakain: S('中院','しだれ桜と苔庭の名刹','sakura','south',35.91072,139.48558,0.45,11,8,'桜期 早朝〜午前',AO('境内 拝観自由')),
+    kitain: S('喜多院','紅葉と多宝塔・五百羅漢','koyo','south',35.91878,139.49000,0.6,12,10,'紅葉期 午前〜午後',HR(8.83,16.5,'拝観 8:50–16:30頃')),
+    honmaru:S('川越城 本丸御殿','現存する本丸御殿','kenchiku','south',35.92548,139.49150,0.4,13,8,'午前 9:00〜11:00',HR(9,17,'月休・目安9:00–17:00')),
+    renkei: S('蓮馨寺','おびんずる様・川越七福神','kenchiku','south',35.92208,139.48418,0.35,12,6,'午前〜午後',AO('境内 拝観自由')),
+    taisho: S('大正浪漫夢通り','大正レトロな商店街','fukei','south',35.92320,139.48415,0.5,13,8,'午前〜夕方',AO('通りは24h')),
+    kumano: S('川越熊野神社','縁結び・足踏み健康ロード','kenchiku','south',35.92195,139.48458,0.4,12,6,'日中',AO('境内 拝観自由')),
+    narita: S('成田山川越別院','蔵の街のお不動さま','kenchiku','south',35.91958,139.48928,0.4,13,7,'午前〜午後',AO('境内 拝観自由')),
   }},
 };
 let SPOTS=REGIONS[region].spots;
@@ -507,11 +501,24 @@ const SHOP_GENRE={cafe:{e:'☕',l:'カフェ'},food:{e:'🍽',l:'食事'},sweets
 function SH(name,genre,lat,lng,pop,peak,o,c,coupon,fee){return {name,genre,latlng:[lat,lng],pop,peak,hours:[o,c],coupon,fee};}
 const SHOPS_ALL={
   kawagoe:{
-    osatsu:  SH('小江戸おさつ庵','sweets',35.92576,139.48366,0.75,13,10,17,'おさつチップス 10%OFF',150),
-    rakuraku:SH('川越ベーカリー楽楽','bakery',35.92683,139.48197,0.6,12,7,18,'焼きたてパン＋ドリンク無料',180),
-    imocafe: SH('小江戸おいもカフェ','cafe',35.92380,139.48370,0.55,15,10,18.5,'紫芋ラテ ¥100引き',160),
-    nakaichi:SH('中市本店','food',35.92461,139.48363,0.65,12.5,10.5,17.5,'ねこまんま 手ぬぐい進呈',200),
-    monzo:   SH('紋蔵庵 蔵の街店','sweets',35.92555,139.48350,0.5,14,9.5,18,'亀どら 1個サービス',140),
+    osatsu:   SH('小江戸おさつ庵','sweets',35.92672,139.48218,0.75,13,10,17,'おさつチップス 10%OFF',150),
+    sarah:    SH('川越プリン 菓子屋横丁','sweets',35.92688,139.48200,0.6,14,10,17,'プリン 1個サービス',150),
+    mameya:   SH('川越 まめ屋','souvenir',35.92660,139.48235,0.55,13,10,18,'豆菓子 小袋プレゼント',130),
+    rakuraku: SH('川越ベーカリー楽楽','bakery',35.92700,139.48230,0.6,12,7,18,'焼きたてパン＋ドリンク無料',180),
+    kashocchi:SH('菓匠右門 時の鐘店','sweets',35.92510,139.48395,0.7,13,9,17,'いも恋 1個サービス',150),
+    nakaichi: SH('中市本店','food',35.92600,139.48370,0.6,12.5,10.5,17.5,'ねこまんま 手ぬぐい進呈',200),
+    monzo:    SH('紋蔵庵 蔵の街店','sweets',35.92540,139.48375,0.5,14,9.5,18,'亀どら 1個サービス',140),
+    yamawa:   SH('陶舗やまわ','souvenir',35.92530,139.48378,0.5,13,10,18,'器 5%OFF',180),
+    machikan: SH('まちかん（刃物）','souvenir',35.92560,139.48372,0.4,13,10,18,'包丁研ぎ サービス',160),
+    glin:     SH('glin coffee 一番街店','cafe',35.92485,139.48358,0.6,15,10,18.5,'ラテ ¥100引き',160),
+    kurazukuri:SH('くらづくり本舗 一番街店','sweets',35.92610,139.48360,0.55,14,9,18,'ぽくぽく 1個サービス',140),
+    kameya:   SH('亀屋 本店','sweets',35.92500,139.48380,0.5,14,9,18,'亀の最中 1個サービス',140),
+    ogawakiku:SH('小川菊（うなぎ）','food',35.92330,139.48425,0.7,12.5,11,20,'うな重 お新香サービス',260),
+    shimano:  SH('シマノコーヒー大正館','cafe',35.92260,139.48430,0.55,15,8,18,'自家焙煎コーヒー 50円引き',150),
+    ohana:    SH('小江戸オハナ 本店','food',35.92050,139.48430,0.6,12.5,11,15,'親子丼 小鉢サービス',220),
+    ichinoya: SH('いちのや（うなぎ）','food',35.92150,139.48600,0.55,12.5,11,20,'うなぎ 肝吸いサービス',280),
+    kurari:   SH('小江戸蔵里 おみやげ処','souvenir',35.91920,139.48470,0.5,13,10,18,'地酒 試飲サービス',150),
+    unatoku:  SH('鰻 徳（大正浪漫）','food',35.92230,139.48430,0.5,12.5,11,20,'う巻き サービス',260),
   },
 };
 let SHOPS=SHOPS_ALL[region]; let SHOP_KEYS=Object.keys(SHOPS);
@@ -585,11 +592,47 @@ function nextSuggestion(fromKey){
   return best;
 }
 
-/* 地図：文字なしの淡色ジオメトリ地図(Esri Light Gray Base=ラベル無し)を主役に→OSM→Wikimedia */
-const KAWAGOE_BOUNDS=[[35.9035,139.4700],[35.9430,139.5010]];
-const map=L.map('map',{zoomControl:false,attributionControl:true,minZoom:14,maxZoom:18,zoomSnap:0,inertia:true,fadeAnimation:false,markerZoomAnimation:true,maxBounds:KAWAGOE_BOUNDS,maxBoundsViscosity:1.0}).setView(REGIONS[region].center,REGIONS[region].zoom);
-L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}',{maxZoom:19,updateWhenIdle:true,updateWhenZooming:false,keepBuffer:1,attribution:'&copy; Google'}).addTo(map);
-map.on('click',()=>{ if(selectedSpot) closeCard(); if(selectedShop) closeShopCard(); });
+/* 地図：正式な Google Maps JavaScript API を使用 */
+const ZMIN=12, ZMAX=19;                       // ズームの下限・上限（片手ズームで参照）
+const LL=(a)=>({lat:a[0],lng:a[1]});          // [lat,lng] → Google形式 {lat,lng} 変換
+const map=new google.maps.Map(document.getElementById('map'),{
+  center:LL(REGIONS[region].center),
+  zoom:REGIONS[region].zoom,
+  minZoom:ZMIN, maxZoom:ZMAX,
+  disableDefaultUI:true,                       // Googleの標準ボタン類は非表示（独自UIを使うため）
+  clickableIcons:false,                        // Google側のスポットPOIのタップを無効化
+  gestureHandling:'greedy',                    // スマホで指1本でも地図を動かせる
+  isFractionalZoomEnabled:true,                // 小数ズーム（片手ズームの滑らかさ用）
+  keyboardShortcuts:false
+});
+/* 地図の何もない所をタップしたらカードを閉じる */
+map.addListener('click',()=>{ if(selectedSpot) closeCard(); if(selectedShop) closeShopCard(); });
+/* flyTo相当（Google MapsにflyToは無いのでパン＋ズームで再現） */
+function flyTo(centerArr,zoom){ map.panTo(LL(centerArr)); if(zoom!=null) map.setZoom(zoom); }
+
+/* HTMLをそのまま地図上に置くための独自オーバーレイ（v24の凝ったアイコン/リング表示を維持） */
+class HtmlMarker extends google.maps.OverlayView{
+  constructor(latlng,html,onClick){
+    super();
+    this.pos=new google.maps.LatLng(latlng[0],latlng[1]);
+    this.wrap=document.createElement('div');
+    this.wrap.style.position='absolute';
+    this.wrap.innerHTML=html;
+    this.onClick=onClick;
+    this.setMap(map);
+  }
+  onAdd(){
+    this.getPanes().overlayMouseTarget.appendChild(this.wrap);
+    this.wrap.addEventListener('click',(e)=>{ e.stopPropagation(); if(this.onClick) this.onClick(); });
+  }
+  draw(){
+    const proj=this.getProjection(); if(!proj)return;
+    const p=proj.fromLatLngToDivPixel(this.pos);
+    if(p){ this.wrap.style.left=p.x+'px'; this.wrap.style.top=p.y+'px'; }
+  }
+  onRemove(){ if(this.wrap&&this.wrap.parentNode) this.wrap.parentNode.removeChild(this.wrap); this.wrap=null; }
+  getElement(){ return this.wrap; }
+}
 
 /* 名所写真（base64埋め込み・確実表示） */
 const SPOT_PHOTO={
@@ -603,14 +646,12 @@ const SPOT_PHOTO={
 };
 let markers={};
 function buildMarkers(){
-  Object.values(markers).forEach(m=>map.removeLayer(m)); markers={};
+  Object.values(markers).forEach(m=>m.setMap(null)); markers={};
   SPOT_KEYS.forEach(key=>{
     const sp=SPOTS[key], url=SPOT_PHOTO[key];
     const inner=url?`<img src="${url}" onerror="this.style.display='none';this.nextElementSibling.style.display='grid';"><span class="fb" style="display:none">${CAT[sp.cat].emoji}</span>`:`<span class="fb">${CAT[sp.cat].emoji}</span>`;
-    const icon=L.divIcon({html:`<div class="marker spot" data-key="${key}"><div class="ppin">${inner}<span class="pdot" data-pdot></span></div><span class="psn" data-sicon></span><span class="plabel" data-label>${sp.name}</span></div>`,iconSize:[0,0],iconAnchor:[0,0]});
-    const m=L.marker(sp.latlng,{icon,keyboard:false}).addTo(map);
-    m.on('click',()=>openCard(key));
-    markers[key]=m;
+    const html=`<div class="marker spot" data-key="${key}"><div class="ppin">${inner}<span class="pdot" data-pdot></span></div><span class="psn" data-sicon></span><span class="plabel" data-label>${sp.name}</span></div>`;
+    markers[key]=new HtmlMarker(sp.latlng,html,()=>openCard(key));
   });
   buildShopMarkers();
 }
@@ -629,13 +670,11 @@ function updateMarkers(){
 /* 店マーカー（アイコンのみ・名前はタップ/選択時） */
 let shopMarkers={};
 function buildShopMarkers(){
-  Object.values(shopMarkers).forEach(m=>map.removeLayer(m)); shopMarkers={};
+  Object.values(shopMarkers).forEach(m=>m.setMap(null)); shopMarkers={};
   SHOP_KEYS.forEach(key=>{
     const s=SHOPS[key], g=SHOP_GENRE[s.genre];
-    const icon=L.divIcon({html:`<div class="marker shop" data-shop="${key}"><div class="spin"><span class="sgi">${g.e}</span><span class="scpn" data-cpn></span></div><span class="plabel" data-label>${s.name}</span></div>`,iconSize:[0,0],iconAnchor:[0,0]});
-    const m=L.marker(s.latlng,{icon,keyboard:false}).addTo(map);
-    m.on('click',()=>openShopCard(key));
-    shopMarkers[key]=m;
+    const html=`<div class="marker shop" data-shop="${key}"><div class="spin"><span class="sgi">${g.e}</span><span class="scpn" data-cpn></span></div><span class="plabel" data-label>${s.name}</span></div>`;
+    shopMarkers[key]=new HtmlMarker(s.latlng,html,()=>openShopCard(key));
   });
 }
 function updateShopMarkers(){
@@ -733,7 +772,7 @@ const nextName=document.getElementById('nextName'),nextWhy=document.getElementBy
 document.getElementById('cardX').addEventListener('click',closeCard);
 const RING_LEN=238.7; let nextTarget=null;
 nextGo.addEventListener('click',()=>{ if(nextTarget)openCard(nextTarget); });
-function openCard(key){if(selectedShop)closeShopCard();selectedSpot=key;sheet.classList.add('open');map.panTo(SPOTS[key].latlng,{animate:true});updateMarkers();updateCard(key);sheet.querySelector('.card').scrollTop=0;}
+function openCard(key){if(selectedShop)closeShopCard();selectedSpot=key;sheet.classList.add('open');map.panTo(LL(SPOTS[key].latlng));updateMarkers();updateCard(key);sheet.querySelector('.card').scrollTop=0;}
 function closeCard(){selectedSpot=null;sheet.classList.remove('open');updateMarkers();}
 function bar(label,v,color){return `<div class="bd"><div class="l"><span>${label}</span><span class="v">${Math.round(v*100)}</span></div><div class="bar"><div class="fill" style="width:${v*100}%;background:${color}"></div></div></div>`;}
 function updateCard(key){
@@ -771,7 +810,7 @@ const shopBusyV=document.getElementById('shopBusyV'),shopBusyFill=document.getEl
 const ownerBtn=document.getElementById('ownerBtn');
 const sendCountEl=document.getElementById('sendCount'),sendYenEl=document.getElementById('sendYen');
 document.getElementById('shopX').addEventListener('click',closeShopCard);
-function openShopCard(key){ closeCard(); selectedShop=key; shopSheet.classList.add('open'); map.panTo(SHOPS[key].latlng,{animate:true}); updateShopMarkers(); updateShopCard(key); shopSheet.querySelector('.card').scrollTop=0; }
+function openShopCard(key){ closeCard(); selectedShop=key; shopSheet.classList.add('open'); map.panTo(LL(SHOPS[key].latlng)); updateShopMarkers(); updateShopCard(key); shopSheet.querySelector('.card').scrollTop=0; }
 function closeShopCard(){ selectedShop=null; shopSheet.classList.remove('open'); updateShopMarkers(); }
 ownerBtn.addEventListener('click',()=>{
   if(!selectedShop)return; const key=selectedShop;
@@ -847,7 +886,7 @@ function setRegion(rk){
   region=rk; SPOTS=REGIONS[rk].spots; SPOT_KEYS=Object.keys(SPOTS);
   SHOPS=SHOPS_ALL[rk]; SHOP_KEYS=Object.keys(SHOPS);
   [...regionSeg.children].forEach((b,i)=>b.classList.toggle('on',Object.keys(REGIONS)[i]===rk));
-  closeCard(); closeShopCard(); buildMarkers(); map.flyTo(REGIONS[rk].center,REGIONS[rk].zoom,{duration:1.1}); refreshAll();
+  closeCard(); closeShopCard(); buildMarkers(); flyTo(REGIONS[rk].center,REGIONS[rk].zoom); refreshAll();
 }
 function setSeason(sk){season=sk;[...seasonSeg.children].forEach((b,i)=>b.classList.toggle('on',SEASON_LIST[i][0]===sk));refreshAll();}
 
@@ -872,15 +911,16 @@ function applyFilter(){
     if(lod==='far'&&(cat==='all'||cat==='spot'))vis=false;   /* 遠景では店を隠す */
     el.style.display=(vis&&matchSearch(s.name))?'':'none';});
 }
-map.on('zoomend',updateLOD); map.on('zoom',updateLOD);
+map.addListener('zoom_changed',updateLOD);
+map.addListener('idle',updateLOD);
 const searchInput=document.getElementById('searchInput'),searchBoxEl=searchInput.parentElement,searchClear=document.getElementById('searchClear');
 let lastFly=null;
 function searchFly(){
-  if(!searchText){ if(lastFly!==null){lastFly=null;map.flyTo(REGIONS[region].center,REGIONS[region].zoom,{duration:.8});} return; }
+  if(!searchText){ if(lastFly!==null){lastFly=null;flyTo(REGIONS[region].center,REGIONS[region].zoom);} return; }
   let target=null,ll=null;
   for(const k of SPOT_KEYS){ if(matchSearch(SPOTS[k].name)){target='spot:'+k;ll=SPOTS[k].latlng;break;} }
   if(!target)for(const k of SHOP_KEYS){ if(matchSearch(SHOPS[k].name)){target='shop:'+k;ll=SHOPS[k].latlng;break;} }
-  if(ll && target!==lastFly){ lastFly=target; map.flyTo(ll,17.4,{duration:.8}); }
+  if(ll && target!==lastFly){ lastFly=target; flyTo(ll,17.4); }
 }
 searchInput.addEventListener('input',()=>{searchText=searchInput.value.trim().toLowerCase();searchBoxEl.classList.toggle('filled',!!searchText);applyFilter();searchFly();});
 searchClear.addEventListener('click',()=>{searchInput.value='';searchText='';searchBoxEl.classList.remove('filled');applyFilter();searchFly();searchInput.focus();});
@@ -912,90 +952,78 @@ document.getElementById('wSun').addEventListener('click',()=>setWeather(false));
 document.getElementById('wCloud').addEventListener('click',()=>setWeather(true));
 function setWeather(cl){weatherCloudy=cl;document.getElementById('wSun').classList.toggle('on',!cl);document.getElementById('wCloud').classList.toggle('on',cl);refreshAll();}
 
-/* 右端エッジからの上下スワイプで片手ズーム（ドラッグ中は地図パンを無効化して競合回避） */
-const edge = document.getElementById('edgeZone');
-  const mapEl = document.getElementById('map');
-  
-  /* === ズーム感度改善ロジック (Touchイベント版) === */
-  const EGAIN = 3.0; // スマホでのスワイプ量に合わせるため、感度をさらに高めに設定
-  const ZOOM_DELAY = 10; // 反応を極限まで速める
-  let eDragging=false, eStartY=0, eStartZoom=0, ePreviewScale=1;
+/* 右端エッジからの上下スワイプで片手ズーム（touchイベント方式：スマホのスクロール干渉を防止）。
+   ドラッグ中はsetZoomを呼ばずCSSスケールで見た目だけ拡大/縮小し、離した瞬間に一度だけ確定（点滅防止） */
+const edge=document.getElementById('edgeZone');
+const mapEl=document.getElementById('map');
+const EGAIN=3.0;      // スマホのスワイプ量に合わせた感度
+const ZOOM_DELAY=10;
+let eDragging=false,eStartY=0,eStartZoom=0,ePreviewScale=1;
+edge.addEventListener('touchstart',e=>{
+  if(e.touches.length>1)return;
+  eDragging=true;eStartY=e.touches[0].clientY;eStartZoom=map.getZoom();ePreviewScale=1;
+  map.setOptions({draggable:false});edge.classList.add('active');mapEl.style.transition='none';
+  e.preventDefault();
+},{passive:false});
+edge.addEventListener('touchmove',e=>{
+  if(!eDragging)return;
+  e.preventDefault();
+  const dy=eStartY-e.touches[0].clientY;
+  const rawDz=(dy/window.innerHeight)*EGAIN*5;   // スマホ用調整係数(*5)
+  const dz=Math.max(ZMIN-eStartZoom,Math.min(ZMAX-eStartZoom,rawDz));
+  ePreviewScale=Math.pow(2,dz);
+  mapEl.style.transform='scale('+ePreviewScale+')';
+},{passive:false});
+function tEnd(e){
+  if(!eDragging)return; eDragging=false;
+  const targetZoom=Math.max(ZMIN,Math.min(ZMAX,eStartZoom+Math.log2(ePreviewScale)));
+  mapEl.style.transition='transform .05s ease-out';
+  mapEl.style.transform='scale(1)';
+  map.setOptions({draggable:true});
+  edge.classList.remove('active');
+  setTimeout(()=>{ mapEl.style.transition=''; map.setZoom(targetZoom); },ZOOM_DELAY);
+}
+edge.addEventListener('touchend',tEnd);
+edge.addEventListener('touchcancel',tEnd);
 
-  // タッチ開始
-  edge.addEventListener('touchstart', e => {
-    if (e.touches.length > 1) return; // 複数の指で触った場合は無視
-
-    eDragging = true;
-    eStartY = e.touches[0].clientY; // touchイベント用のY座標取得
-    eStartZoom = map.getZoom();
-    ePreviewScale = 1;
-    
-    map.dragging.disable();
-    edge.classList.add('active');
-    mapEl.style.transition = 'none';
-    
-    e.preventDefault(); // スクロールを完全に防ぐ
-  }, { passive: false });
-
-  // タッチ移動
-  edge.addEventListener('touchmove', e => {
-    if (!eDragging) return;
-    
-    e.preventDefault(); // スクロールを完全に防ぐ
-
-    const currentY = e.touches[0].clientY;
-    const dy = eStartY - currentY;
-    
-    // 画面高さに対する移動割合を計算し、EGAINと調整係数を掛ける
-    const ratio = dy / window.innerHeight;
-    const rawDz = ratio * EGAIN * 5; // 5はスマホ用感度調整係数
-    
-    // ズームの限界値を設定
-    const dz = Math.max(map.getMinZoom() - eStartZoom, Math.min(map.getMaxZoom() - eStartZoom, rawDz));
-    
-    ePreviewScale = Math.pow(2, dz);
-    mapEl.style.transform = 'scale(' + ePreviewScale + ')';
-  }, { passive: false });
-
-  // タッチ終了
-  function tEnd(e){
-    if (!eDragging) return; 
-    eDragging = false;
-    
-    const targetZoom = Math.max(map.getMinZoom(), Math.min(map.getMaxZoom(), eStartZoom + Math.log2(ePreviewScale)));
-    
-    mapEl.style.transition = 'transform .05s ease-out'; // 少しだけアニメーションを残す
-    mapEl.style.transform = 'scale(1)';
-    map.dragging.enable();
-    edge.classList.remove('active');
-    
-    setTimeout(() => { 
-      mapEl.style.transition = ''; 
-      map.setZoom(targetZoom, { animate: false }); 
-    }, ZOOM_DELAY);
-  }
-
-  edge.addEventListener('touchend', tEnd);
-  edge.addEventListener('touchcancel', tEnd);
+/* 🏠 川越へ（中心＋ズームを川越に戻す） */
+const homeBtn=document.getElementById('homeBtn');
+if(homeBtn) homeBtn.addEventListener('click',()=>flyTo(REGIONS.kawagoe.center,15));
 const hint=document.getElementById('hint');
 setTimeout(()=>hint.classList.add('gone'),5200);
 let last=performance.now();
 let lastRefresh=0;
 function animate(now){ const dt=Math.min(0.05,(now-last)/1000);last=now; if(playing){hour+=dt*(24/26);if(hour>=24)hour-=24;timeRange.value=Math.round(hour*60);if(now-lastRefresh>120){lastRefresh=now;refreshAll();}} requestAnimationFrame(animate); }
-addEventListener('resize',()=>{setTimeout(()=>map.invalidateSize(),120);});
+
 
 buildMarkers(); refreshAll(); updateLOD(); requestAnimationFrame(animate);
-setTimeout(()=>{document.getElementById('loader').classList.add('gone');map.invalidateSize();},700);
+setTimeout(()=>{document.getElementById('loader').classList.add('gone');},700);
 }
 
-/* Leaflet 読み込み保証 */
-(function ensureLeaflet(){
-  if(typeof L!=='undefined'){ boot(); return; }
-  function fail(){var el=document.getElementById('loader');if(el){el.classList.remove('gone');el.innerHTML='<div class="lm">地図を読み込めませんでした</div><div class="ls" style="margin-top:14px">通信環境をご確認ください</div>';}}
-  function addCss(h){var l=document.createElement('link');l.rel='stylesheet';l.href=h;document.head.appendChild(l);}
-  function load(src,ok,ng){var s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=ng;document.head.appendChild(s);}
-  addCss('https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css');
-  load('https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js',function(){boot();},function(){load('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',function(){boot();},fail);});
+/* ===== Google Maps API の読み込み =====
+   ↓↓↓ この "ここにAPIキーを貼る" の部分を、あなたが取得したAPIキーに書き換えてください ↓↓↓ */
+const GOOGLE_MAPS_API_KEY = "AIzaSyAfSt5c8TZzEBIMKYnyGg58v91np2R3upo";
+/* ↑↑↑ 例: const GOOGLE_MAPS_API_KEY = "AIzaSy........"; のように、引用符の中だけ差し替える ↑↑↑ */
+
+(function loadGoogleMaps(){
+  function fail(){
+    var el=document.getElementById('loader');
+    if(el){ el.classList.remove('gone');
+      el.innerHTML='<div class="lm">地図を読み込めませんでした</div><div class="ls" style="margin-top:14px">APIキーの設定・通信環境をご確認ください</div>'; }
+  }
+  if(!GOOGLE_MAPS_API_KEY || GOOGLE_MAPS_API_KEY==="AIzaSyAfSt5c8TZzEBIMKYnyGg58v91np2R3upo"){
+    var el=document.getElementById('loader');
+    if(el){ el.classList.remove('gone');
+      el.innerHTML='<div class="lm">APIキーが未設定です</div><div class="ls" style="margin-top:14px">HTMLファイル内の GOOGLE_MAPS_API_KEY を書き換えてください</div>'; }
+    return;
+  }
+  /* Googleの読み込み完了後に呼ばれるコールバック */
+  window.__initTokimeguri=function(){ boot(); };
+  var s=document.createElement('script');
+  s.src='https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(GOOGLE_MAPS_API_KEY)+'&callback=__initTokimeguri&v=weekly&language=ja&region=JP';
+  s.async=true;
+  s.onerror=fail;
+  document.head.appendChild(s);
 })();
 </script>
 </body>
