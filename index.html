@@ -18,9 +18,12 @@
     --panel-2:#ffffff;
     --panel-line:rgba(24,20,14,.12);
   }
-  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   html,body{height:100%;overflow:hidden;background:#efeae1;font-family:"Zen Kaku Gothic New",system-ui,sans-serif;color:var(--shikkui)}
 #map{position:absolute !important; width:100%; height:100%; top:0; left:0; background:#efeae1; z-index:1;}
+  /* ↓↓↓ 追加: Google Maps内部のレイアウト崩れ（投影ズレ）を防ぐ ↓↓↓ */
+  #map * { box-sizing: content-box; }
+  .marker, .marker * { box-sizing: border-box; }
   .leaflet-div-icon{background:transparent;border:none}
   .leaflet-container{background:#efeae1;font-family:inherit;outline:none}
   .leaflet-control-attribution{background:rgba(255,255,255,.7)!important;color:#555!important;font-size:9px!important;padding:2px 6px!important}
@@ -955,30 +958,38 @@ function setWeather(cl){weatherCloudy=cl;document.getElementById('wSun').classLi
 
 /* 右端エッジからの上下スワイプで片手ズーム（touchイベント方式：スマホのスクロール干渉を防止）。
    ドラッグ中はsetZoomを呼ばずCSSスケールで見た目だけ拡大/縮小し、離した瞬間に一度だけ確定（点滅防止） */
+/* 右端エッジ・ズームトリガーゾーン */
 const edge=document.getElementById('edgeZone');
 const mapEl=document.getElementById('map');
-const EGAIN=3.0;      // スマホのスワイプ量に合わせた感度
-const ZOOM_DELAY=10;
-let eDragging=false,eStartY=0,eStartZoom=0,ePreviewScale=1;
+const EGAIN=3.0;
+let eDragging=false,eStartY=0,eStartZoom=0;
+
 edge.addEventListener('touchstart',e=>{
   if(e.touches.length>1)return;
-  eDragging=true;eStartY=e.touches[0].clientY;eStartZoom=map.getZoom();ePreviewScale=1;
-  map.setOptions({draggable:false});edge.classList.add('active');mapEl.style.transition='none';
+  eDragging=true;eStartY=e.touches[0].clientY;eStartZoom=map.getZoom();
+  map.setOptions({draggable:false});edge.classList.add('active');
   e.preventDefault();
 },{passive:false});
+
 edge.addEventListener('touchmove',e=>{
   if(!eDragging)return;
   e.preventDefault();
   const dy=eStartY-e.touches[0].clientY;
   const rawDz=(dy/window.innerHeight)*EGAIN*5;
   const targetZoom=Math.max(ZMIN,Math.min(ZMAX,eStartZoom+rawDz));
-  // CSSのscaleハックを削除し、Google Mapsの滑らかな小数ズームを直接操作する
+  
+  // 諸悪の根源だった mapEl.style.transform='scale(...)' を削除！
+  // 代わりにAPIの小数ズーム機能へ直接数値を渡す
   map.setZoom(targetZoom);
 },{passive:false});
+
 function tEnd(e){
   if(!eDragging)return; eDragging=false;
   map.setOptions({draggable:true});
   edge.classList.remove('active');
+  // 過去のscale操作の残骸を完全に消去して座標バグを防ぐ
+  mapEl.style.transform = '';
+  mapEl.style.transition = '';
 }
 edge.addEventListener('touchend',tEnd);
 edge.addEventListener('touchcancel',tEnd);
