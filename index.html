@@ -21,7 +21,7 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   html,body{height:100%;overflow:hidden;background:#efeae1;font-family:"Zen Kaku Gothic New",system-ui,sans-serif;color:var(--shikkui)}
 #map{position:absolute !important; width:100%; height:100%; top:0; left:0; background:#efeae1; z-index:1;}
-  /* ↓↓↓ 追加: Google Maps内部のレイアウト崩れ（投影ズレ）を防ぐ ↓↓↓ */
+  /* ↓↓↓ 追加: Google Maps内部の投影ズレを防ぐ ↓↓↓ */
   #map * { box-sizing: content-box; }
   .marker, .marker * { box-sizing: border-box; }
   .leaflet-div-icon{background:transparent;border:none}
